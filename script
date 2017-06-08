@@ -1,0 +1,41 @@
+library(dygraphs)
+library(forecast)
+
+
+monthly <- read.csv("monthly.csv")
+quarterly <- read.csv('quarterly.csv')
+extradata <- read.csv("extradata.csv")
+
+new.mortgages <- monthly$Total.amount.of.new.indiv.mortg..in.Afl.mln...Comm.Banks.
+new.mortgages <- ts(new.mortgages, start=c(2005, 10), end=c(2017, 4), frequency=12) 
+housing.mortgages <- ts(monthly$Housing.mortg, start = c(2005,10),end = c(2017,4), frequency = 12)
+cement.import <- ts(quarterly$Cement.import..x.1.000.Kg., start=c(2005,1), end = c(2016,4), frequency = 4)
+number.elect.installations <- ts(quarterly$Number.of.electrical.installations.approved, start=c(2005,1), end = c(2016,4), frequency = 4)
+hous.number.permits <- ts(extradata$Number.of.construction.permits.granted.Houses, start = c(1997,1), end = c(2017,1), frequency = 4)
+hous.value.permits <- ts(extradata$Total.value.of.construction.permits..x.Afl..million..Houses, start = c(1997,1), end = c(2017,1), frequency = 4)
+
+# Graphing
+plot(hous.value.permits)
+plot(new.mortgages, xlab = "Time", ylab = "Total amount of new individual mortgages (in Afl. million)")
+plot(housing.mortgages, xlab = "Time", ylab = "Housing mortgages (in Afl. million)")
+plot(cement.import, xlab = "Time", ylab = "Cement import (x 1.000kg)")
+
+# test for unit root and number of differences required, you can also test for seasonality with nsdiffs
+ndiffs(hous.number.permits, alpha=0.05, test=c("kpss","adf", "pp"), max.d=2)
+ndiffs(hous.value.permits, alpha=0.05, test=c("kpss","adf", "pp"), max.d=2)
+ndiffs(new.mortgages, alpha=0.05, test=c("kpss","adf", "pp"), max.d=2)
+# So hous.number.permits and new mortgages has unit root, need to remove it.
+
+# First difference
+d_hous.number.permits <- diff(hous.number.permits)
+d_new.mortgages <- diff(new.mortgages)
+
+
+# Identified 3 variables of interest: d_hous.number.permits, hous.value.permits, d_new.mortgages
+plot(d_hous.number.permits)
+plot(hous.value.permits)
+plot(d_new.mortgages)
+
+#convert monthly new mortgages to quarterly (via summation)
+q_new.mortgages <- aggregate(d_new.mortgages, nfrequency=4)
+q_new.mortgages
